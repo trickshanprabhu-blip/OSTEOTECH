@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Doctor Portal - Secure Clinical Login</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          brand: {
+            50: '#f0f9ff', 100: '#e0f2fe', 200: '#bae6fd',
+            400: '#38bdf8', 500: '#0088e8', 600: '#0284c7',
+            700: '#0369a1', 800: '#075985', 900: '#0c4a6e'
+          }
+        },
+        fontFamily: {
+          sans: ['Inter','system-ui','-apple-system','BlinkMacSystemFont','Segoe UI','Roboto','sans-serif'],
+        },
+        boxShadow: {
+          'glow': '0 12px 28px -6px rgba(0,136,232,0.42)',
+        }
+      }
+    }
+  }
+</script>
+<link href="https://fonts.googleapis.com" rel="preconnect">
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+<style>
+  * { font-family: 'Inter', sans-serif; box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+
+  /* ── Desktop underline decoration ── */
+  .custom-underline { position: relative; display: inline-block; }
+  .custom-underline::after {
+    content: '';
+    position: absolute;
+    left: 0; bottom: -6px;
+    width: 44px; height: 4.5px;
+    border-radius: 9999px;
+    background-color: #0088e8;
+  }
+
+  /* ── Desktop hero gradient ── */
+  .hero-gradient {
+    background: linear-gradient(175deg, #0091ff 0%, #0077d8 45%, #005bb7 100%);
+  }
+
+  /* ── Desktop wave animations ── */
+  @keyframes waveShiftOne {
+    0%   { transform: translateX(0)    scaleY(1); }
+    50%  { transform: translateX(-25%) scaleY(0.85); }
+    100% { transform: translateX(-50%) scaleY(1); }
+  }
+  @keyframes waveShiftTwo {
+    0%   { transform: translateX(-50%) scaleY(0.8); }
+    50%  { transform: translateX(-20%) scaleY(1.1); }
+    100% { transform: translateX(0)    scaleY(0.8); }
+  }
+  @keyframes waveShiftThree {
+    0%   { transform: translateX(0)    scaleY(1); }
+    50%  { transform: translateX(-30%) scaleY(1.2); }
+    100% { transform: translateX(-60%) scaleY(1); }
+  }
+  .wave-layer-1 { animation: waveShiftOne   12s linear      infinite alternate; }
+  .wave-layer-2 { animation: waveShiftTwo   18s ease-in-out infinite alternate; }
+  .wave-layer-3 { animation: waveShiftThree 10s ease-in-out infinite alternate; }
+
+  /* ── Mobile wave animations ── */
+  @keyframes mobWave1 {
+    0%,100% { transform: translateX(0) scaleY(1); }
+    50%     { transform: translateX(-28px) scaleY(1.07); }
+  }
+  @keyframes mobWave2 {
+    0%,100% { transform: translateX(0) scaleY(1); }
+    50%     { transform: translateX(24px) scaleY(0.92); }
+  }
+  @keyframes mobWave3 {
+    0%,100% { transform: translateX(0); }
+    50%     { transform: translateX(-16px); }
+  }
+  .mob-wave-1 { animation: mobWave1 10s ease-in-out infinite; }
+  .mob-wave-2 { animation: mobWave2 14s ease-in-out infinite; }
+  .mob-wave-3 { animation: mobWave3  8s ease-in-out infinite; }
+
+  /* ── Mobile input underline ── */
+  .mob-input-row {
+    display: flex; align-items: center;
+    border-bottom: 2px solid #e2e8f0;
+    padding-bottom: 8px;
+    transition: border-color 0.2s;
+  }
+  .mob-input-row:focus-within { border-color: #0284c7; }
+  .mob-input-row input {
+    border: none !important; outline: none !important;
+    box-shadow: none !important; background: transparent;
+    width: 100%; font-size: 15px; font-weight: 500; color: #1e293b;
+  }
+  .mob-input-row input::placeholder { color: #94a3b8; }
+
+  /* ── Login button ── */
+  .mob-login-btn {
+    background: linear-gradient(90deg, #0284c7 0%, #0ea5e9 60%, #38bdf8 100%);
+    box-shadow: 0 6px 20px -4px rgba(14,165,233,0.5);
+    transition: all 0.2s ease; border: none; cursor: pointer;
+  }
+  .mob-login-btn:hover { transform: translateY(-1px); box-shadow: 0 10px 26px -4px rgba(14,165,233,0.6); }
+  .mob-login-btn:active { transform: scale(0.98); }
+
+  /* ── Visibility toggles ── */
+  #mobile-view  { display: none; }
+  #desktop-view { display: none; }
+
+  /* Mobile */
+  @media (max-width: 767px) {
+    #mobile-view  { display: flex; flex-direction: column; min-height: 100dvh; background: #fff; }
+  }
+  /* Desktop */
+  @media (min-width: 768px) {
+    #desktop-view { display: flex; flex-direction: column; min-height: 100vh; background: #f8fafc; }
+  }
+</style>
+</head>
+<body class="antialiased text-slate-800">
+
+
+<!-- ════════════════════════════════════════════════
+     MOBILE VIEW  (< 768 px)
+════════════════════════════════════════════════ -->
+<div id="mobile-view">
+
+  <!-- iOS status bar -->
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 24px 8px;background:linear-gradient(180deg,#0284c7,#0ea5e9);">
+    <span style="font-size:15px;font-weight:600;color:white;">9:41</span>
+    <div style="width:118px;height:28px;background:#000;border-radius:999px;display:flex;align-items:center;justify-content:space-between;padding:0 10px;">
+      <div style="width:10px;height:10px;background:#111;border-radius:50%;border:1px solid #222;"></div>
+      <div style="width:10px;height:10px;background:rgba(30,58,138,.7);border-radius:50%;"></div>
+    </div>
+    <div style="display:flex;align-items:center;gap:6px;color:white;">
+      <svg width="16" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M2 19h2V5H2v14zm5 0h2V8H7v11zm5 0h2v-8h-2v8zm5 0h2v-11h-2v11zm5 0h2V2h-2v17z"/></svg>
+      <svg width="16" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 4C7.31 4 3.07 5.9 0 8.98L12 21 24 8.98A16.88 16.88 0 0012 4z"/></svg>
+      <div style="width:22px;height:11px;border:2px solid white;border-radius:3px;padding:1.5px;display:flex;align-items:center;">
+        <div style="height:100%;width:80%;background:white;border-radius:1px;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Blue hero with animated waves -->
+  <div style="position:relative;background:linear-gradient(180deg,#0284c7 0%,#0ea5e9 100%);height:42vh;flex-shrink:0;overflow:hidden;">
+    <div style="position:absolute;bottom:0;left:0;right:0;overflow:hidden;">
+      <svg class="mob-wave-1" style="position:absolute;bottom:8px;width:200%;height:70px;opacity:.3;" viewBox="0 0 1200 80" preserveAspectRatio="none" fill="white">
+        <path d="M0,40 C200,80 400,0 600,40 C800,80 1000,0 1200,40 L1200,80 L0,80 Z"/>
+      </svg>
+      <svg class="mob-wave-2" style="position:absolute;bottom:4px;width:200%;height:54px;opacity:.45;" viewBox="0 0 1200 60" preserveAspectRatio="none" fill="white">
+        <path d="M0,30 C150,60 350,0 600,30 C850,60 1050,0 1200,30 L1200,60 L0,60 Z"/>
+      </svg>
+      <svg class="mob-wave-3" style="position:absolute;bottom:0;width:200%;height:40px;opacity:.7;" viewBox="0 0 1200 50" preserveAspectRatio="none" fill="white">
+        <path d="M0,25 C90,5 170,45 270,15 C400,1 550,30 700,18 C900,5 1050,35 1200,20 L1200,50 L0,50 Z"/>
+      </svg>
+    </div>
+  </div>
+
+  <!-- White form section -->
+  <div style="flex:1;background:white;padding:8px 28px 32px;">
+    <div style="padding-top:24px;">
+      <p style="font-size:12px;font-weight:700;color:#0284c7;letter-spacing:.2em;text-transform:uppercase;margin:0 0 2px;">WELCOME</p>
+      <h1 style="font-size:26px;font-weight:900;color:#0284c7;margin:0 0 8px;letter-spacing:-.5px;">Doctor</h1>
+      <div style="position:relative;display:inline-block;margin-bottom:28px;">
+        <h2 style="font-size:22px;font-weight:700;color:#1e293b;margin:0;">Login</h2>
+        <div style="position:absolute;bottom:-5px;left:0;width:36px;height:3px;background:#0284c7;border-radius:99px;"></div>
+      </div>
+    </div>
+
+    <form onsubmit="handleLogin(event,'mob-username')" style="display:flex;flex-direction:column;gap:20px;">
+      <!-- Username -->
+      <div>
+        <label style="display:block;font-size:10px;font-weight:700;color:#94a3b8;letter-spacing:.15em;text-transform:uppercase;margin-bottom:8px;">USERNAME</label>
+        <div class="mob-input-row">
+          <svg style="color:#94a3b8;width:20px;height:20px;flex-shrink:0;margin-right:10px;" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+            <path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <div style="width:1px;height:16px;background:#e2e8f0;margin-right:10px;flex-shrink:0;"></div>
+          <input id="mob-username" type="text" placeholder="dr.smith" required>
+        </div>
+      </div>
+      <!-- Password -->
+      <div>
+        <label style="display:block;font-size:10px;font-weight:700;color:#94a3b8;letter-spacing:.15em;text-transform:uppercase;margin-bottom:8px;">PASSWORD</label>
+        <div class="mob-input-row">
+          <svg style="color:#94a3b8;width:20px;height:20px;flex-shrink:0;margin-right:10px;" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+            <path d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <div style="width:1px;height:16px;background:#e2e8f0;margin-right:10px;flex-shrink:0;"></div>
+          <input id="mob-password" type="password" placeholder="••••••••••••" required>
+          <button type="button" onclick="togglePwd('mob-password','mob-eye','mob-eye-off')" style="background:none;border:none;cursor:pointer;padding:4px;color:#94a3b8;flex-shrink:0;">
+            <svg id="mob-eye" style="width:20px;height:20px;" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+              <path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <svg id="mob-eye-off" style="width:20px;height:20px;display:none;" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+              <path d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+      <!-- Remember & Forgot -->
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+          <input type="checkbox" style="width:16px;height:16px;border-radius:4px;accent-color:#0284c7;">
+          <span style="font-size:12px;font-weight:500;color:#64748b;">Remember Me</span>
+        </label>
+        <a href="#" style="font-size:12px;font-weight:600;color:#0284c7;text-decoration:none;">Forgot Password?</a>
+      </div>
+      <!-- Button -->
+      <button type="submit" class="mob-login-btn" style="width:100%;padding:14px;border-radius:16px;color:white;font-size:15px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:8px;">
+        Login
+        <svg style="width:18px;height:18px;" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+          <path d="M14 5l7 7m0 0l-7 7m7-7H3" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+    </form>
+
+    <p style="text-align:center;font-size:12px;color:#94a3b8;margin-top:20px;">
+      Don't have an Account?
+      <a href="#" style="font-weight:700;color:#0284c7;text-decoration:none;margin-left:4px;">Sign up</a>
+    </p>
+    <div style="width:128px;height:4px;background:#e2e8f0;border-radius:99px;margin:20px auto 0;"></div>
+  </div>
+</div>
+<!-- END MOBILE VIEW -->
+
+
+<!-- ════════════════════════════════════════════════
+     DESKTOP VIEW  (≥ 768 px)
+════════════════════════════════════════════════ -->
+<div id="desktop-view">
+
+  <!-- ── TOP BAR ── -->
+  <header class="w-full bg-white border-b border-slate-100 z-30 relative px-6 lg:px-12 py-3.5 flex items-center justify-between">
+    <div class="flex items-center space-x-8">
+      <a href="#" class="flex items-center space-x-3 group">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-sky-400 flex items-center justify-center text-white shadow-md shadow-brand-500/20 shrink-0">
+          <span class="font-extrabold text-base tracking-tight text-white select-none">OA</span>
+        </div>
+        <div class="flex flex-col">
+          <span class="text-base font-extrabold tracking-tight text-slate-800 leading-none group-hover:text-brand-600 transition">
+            OSTEO<span class="text-brand-600">TECH</span>
+          </span>
+          <span class="text-[10px] font-semibold text-slate-400 tracking-wider uppercase mt-1">
+            Surgical &amp; Orthopedic Intelligence
+          </span>
+        </div>
+      </a>
+      <nav class="hidden lg:flex items-center space-x-6 text-xs font-semibold text-slate-600 border-l border-slate-200 pl-6">
+        <a href="#" class="hover:text-brand-600 transition">Surgical Planning</a>
+        <a href="#" class="hover:text-brand-600 transition">Diagnostics</a>
+        <a href="#" class="hover:text-brand-600 transition">Support</a>
+      </nav>
+    </div>
+    <div class="flex items-center space-x-5 text-sm">
+      <div class="hidden md:flex items-center space-x-2 text-slate-500 text-xs bg-slate-50 px-3 py-1.5 rounded-full border border-slate-200/60">
+        <span class="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+        <span class="font-medium">System Status: <strong class="text-slate-700">All Services Operational</strong></span>
+      </div>
+      <div class="h-4 w-px bg-slate-200 hidden md:block"></div>
+      <div class="relative inline-flex items-center text-slate-600 font-medium text-xs space-x-1 cursor-pointer hover:text-brand-600 transition">
+        <span>EN (US)</span>
+        <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path d="M19 9l-7 7-7-7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/>
+        </svg>
+      </div>
+    </div>
+  </header>
+
+  <!-- ── MAIN SPLIT PANEL ── -->
+  <main class="flex-1 flex items-center justify-center p-4 sm:p-6 lg:p-10">
+    <div class="w-full max-w-6xl bg-white rounded-3xl shadow-xl shadow-slate-200/70 border border-slate-100 overflow-hidden grid grid-cols-1 lg:grid-cols-12 min-h-[640px]">
+
+      <!-- LEFT: Hero panel -->
+      <div class="lg:col-span-6 hero-gradient relative p-8 lg:p-14 flex flex-col justify-between overflow-hidden text-white">
+
+        <!-- Ambient glow spheres -->
+        <div class="absolute -top-24 -right-24 w-96 h-96 rounded-full bg-white/10 blur-2xl pointer-events-none"></div>
+        <div class="absolute top-1/2 -left-20 w-80 h-80 rounded-full bg-sky-300/20 blur-xl pointer-events-none"></div>
+
+        <!-- Center content -->
+        <div class="relative z-20 flex-1 flex flex-col items-center justify-center text-center px-4 my-auto">
+          <div class="inline-flex items-center gap-2 bg-white/15 backdrop-blur-md px-4 py-1.5 rounded-full text-xs font-semibold uppercase tracking-widest text-sky-100 border border-white/20 mb-6 shadow-sm">
+            <span class="w-2 h-2 rounded-full bg-cyan-300 animate-pulse"></span>
+            Patient Care Experience
+          </div>
+          <h1 class="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-widest uppercase text-white leading-tight drop-shadow-md">
+            <span class="block font-bold tracking-tight text-cyan-200 text-2xl lg:text-3xl mb-1">OSTEO TECH</span>
+            FOR PATIENT
+          </h1>
+          <p class="mt-4 text-sky-100/90 text-sm sm:text-base max-w-sm font-normal leading-relaxed">
+            Empowering seamless recovery journeys, personalized rehabilitation insights, and continuous orthopedic care.
+          </p>
+        </div>
+
+        <!-- Layered animated waves at bottom -->
+        <div class="absolute inset-x-0 bottom-0 h-56 w-full overflow-hidden pointer-events-none leading-none z-10">
+          <div class="wave-layer-1 absolute -bottom-1 left-0 w-[200%] h-full opacity-30">
+            <svg class="w-full h-full text-cyan-300" fill="currentColor" preserveAspectRatio="none" viewBox="0 0 1440 320">
+              <path d="M0,160L48,176C96,192,192,224,288,208C384,192,480,128,576,128C672,128,768,192,864,208C960,224,1056,192,1152,176C1248,160,1344,160,1392,160L1440,160L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"/>
+            </svg>
+          </div>
+          <div class="wave-layer-2 absolute -bottom-1 left-0 w-[200%] h-full opacity-20">
+            <svg class="w-full h-full text-brand-50" fill="currentColor" preserveAspectRatio="none" viewBox="0 0 1440 320">
+              <path d="M0,64L48,96C96,128,192,192,288,197.3C384,203,480,149,576,149.3C672,149,768,203,864,218.7C960,235,1056,213,1152,186.7C1248,160,1344,128,1392,112L1440,96L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"/>
+            </svg>
+          </div>
+          <div class="wave-layer-3 absolute -bottom-1 left-0 w-[200%] h-full opacity-25">
+            <svg class="w-full h-full text-white" fill="currentColor" preserveAspectRatio="none" viewBox="0 0 1440 320">
+              <path d="M0,224L48,213.3C96,203,192,181,288,181.3C384,181,480,203,576,218.7C672,235,768,245,864,229.3C960,213,1056,171,1152,160C1248,149,1344,171,1392,181.3L1440,192L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"/>
+            </svg>
+          </div>
+        </div>
+      </div>
+      <!-- END LEFT PANEL -->
+
+      <!-- RIGHT: Login form -->
+      <div class="lg:col-span-6 p-8 sm:p-12 lg:p-16 flex flex-col justify-center bg-white">
+        <div class="max-w-md w-full mx-auto">
+
+          <!-- WELCOME / Doctor / Login heading -->
+          <div class="mb-9">
+            <span class="block text-brand-500 font-extrabold tracking-wider text-sm uppercase mb-1">WELCOME</span>
+            <h2 class="text-3xl sm:text-4xl font-extrabold text-brand-600 tracking-tight leading-tight">Doctor</h2>
+            <div class="mt-3">
+              <span class="text-2xl font-bold text-slate-800 custom-underline">Login</span>
+            </div>
+          </div>
+
+          <!-- Form -->
+          <form id="desktop-login-form" class="space-y-6" onsubmit="handleLogin(event,'desk-username')">
+
+            <!-- USERNAME -->
+            <div class="space-y-1">
+              <label class="block text-xs font-bold tracking-wider text-slate-400 uppercase" for="desk-username">USERNAME</label>
+              <div class="relative flex items-center border-b-2 border-slate-200 focus-within:border-brand-500 transition duration-200 py-1.5">
+                <div class="text-slate-400 pl-0.5 pr-3">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                    <path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </div>
+                <div class="h-4 w-px bg-slate-200 mr-3"></div>
+                <input class="w-full border-0 p-0 text-slate-700 font-medium placeholder:text-slate-400 focus:ring-0 text-sm sm:text-base bg-transparent outline-none"
+                  id="desk-username" name="username" type="text" placeholder="Enter medical ID or username" required>
+              </div>
+            </div>
+
+            <!-- PASSWORD -->
+            <div class="space-y-1 pt-1">
+              <label class="block text-xs font-bold tracking-wider text-slate-400 uppercase" for="desk-password">PASSWORD</label>
+              <div class="relative flex items-center border-b-2 border-slate-200 focus-within:border-brand-500 transition duration-200 py-1.5">
+                <div class="text-slate-400 pl-0.5 pr-3">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                    <path d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </div>
+                <div class="h-4 w-px bg-slate-200 mr-3"></div>
+                <input class="w-full border-0 p-0 text-slate-700 font-medium tracking-widest placeholder:tracking-normal placeholder:text-slate-400 focus:ring-0 text-sm sm:text-base bg-transparent outline-none"
+                  id="desk-password" name="password" type="password" placeholder="Enter your password" required>
+                <button aria-label="Toggle password visibility" class="text-slate-400 hover:text-brand-600 transition focus:outline-none px-1"
+                  id="desk-togglePassword" type="button" onclick="togglePwd('desk-password','desk-eye','desk-eye-off')">
+                  <svg id="desk-eye" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                    <path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                  <svg id="desk-eye-off" class="w-5 h-5 hidden" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                    <path d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <!-- Remember & Forgot -->
+            <div class="flex items-center justify-between pt-1 text-sm">
+              <label class="flex items-center cursor-pointer select-none group">
+                <input class="w-4 h-4 rounded border-slate-300 text-brand-500 focus:ring-brand-400 transition cursor-pointer" type="checkbox">
+                <span class="ml-2 text-slate-500 group-hover:text-slate-700 text-xs sm:text-sm">Remember Me</span>
+              </label>
+              <a class="text-xs sm:text-sm font-semibold text-brand-600 hover:text-brand-700 hover:underline transition" href="#">Forgot Password?</a>
+            </div>
+
+            <!-- Login button -->
+            <div class="pt-4">
+              <button type="submit" class="w-full bg-gradient-to-r from-brand-500 to-sky-400 hover:from-brand-600 hover:to-sky-500 text-white font-bold py-3.5 px-6 rounded-2xl shadow-glow transition duration-200 transform hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-2 text-base focus:ring-4 focus:ring-brand-200 outline-none">
+                <span>Login</span>
+                <span class="text-lg">→</span>
+              </button>
+            </div>
+
+            <!-- Sign up -->
+            <div class="text-center pt-3 text-xs sm:text-sm text-slate-500">
+              Don't have an Account?
+              <a class="font-bold text-brand-600 hover:text-brand-700 hover:underline ml-1" href="#">Sign up</a>
+            </div>
+          </form>
+
+        </div>
+      </div>
+      <!-- END RIGHT PANEL -->
+
+    </div>
+  </main>
+
+  <!-- ── FOOTER ── -->
+  <footer class="w-full py-4 px-6 text-center text-xs text-slate-400 border-t border-slate-200/60 bg-white">
+    <div class="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
+      <div class="flex items-center space-x-4">
+        <span>© 2025 MediPulse Health Informatics Systems Inc.</span>
+        <span class="hidden sm:inline">•</span>
+        <span class="text-slate-500 font-medium">HIPAA &amp; HITECH Certified Portal</span>
+      </div>
+      <div class="flex items-center space-x-4">
+        <a class="hover:text-slate-600 hover:underline" href="#">Privacy Policy</a>
+        <a class="hover:text-slate-600 hover:underline" href="#">Terms of Clinical Use</a>
+        <a class="hover:text-slate-600 hover:underline" href="#">Security Protocols</a>
+      </div>
+    </div>
+  </footer>
+
+</div>
+<!-- END DESKTOP VIEW -->
+
+
+<!-- ════════════════════════════════════════════════
+     SHARED SCRIPTS
+════════════════════════════════════════════════ -->
+<script>
+  // Password toggle (works for both mobile and desktop)
+  function togglePwd(inputId, eyeId, eyeOffId) {
+    const inp    = document.getElementById(inputId);
+    const eyeOn  = document.getElementById(eyeId);
+    const eyeOff = document.getElementById(eyeOffId);
+    const isPass = inp.type === 'password';
+    inp.type = isPass ? 'text' : 'password';
+    if (eyeOn)  eyeOn.style.display  = isPass ? 'none' : '';
+    if (eyeOff) eyeOff.style.display = isPass ? ''     : 'none';
+    // Tailwind class toggle for desk eye icons
+    if (eyeOn)  eyeOn.classList.toggle('hidden',  isPass);
+    if (eyeOff) eyeOff.classList.toggle('hidden', !isPass);
+  }
+
+  // Login handler — saves username then navigates
+  function handleLogin(e, usernameId) {
+    e.preventDefault();
+    const username = document.getElementById(usernameId).value.trim();
+    if (!username) return;
+    localStorage.setItem('doctorUsername', username);
+    window.location.href = 'patients.html';
+  }
+</script>
+
+</body>
+</html>

@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Osteoarthritis Patients - Doctor Portal</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * { font-family: 'Inter', sans-serif; }
+    body { background-color: #f1f5f9; }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+    .wave-header {
+      background: linear-gradient(160deg, #0369a1 0%, #0284c7 40%, #0ea5e9 75%, #38bdf8 100%);
+    }
+
+    /* Animated waves in header */
+    .wave-layer-1 { animation: waveShift1 12s ease-in-out infinite; }
+    .wave-layer-2 { animation: waveShift2 9s ease-in-out infinite; }
+
+    @keyframes waveShift1 {
+      0%, 100% { transform: translateX(0); }
+      50%       { transform: translateX(-28px); }
+    }
+    @keyframes waveShift2 {
+      0%, 100% { transform: translateX(0) scaleY(1); }
+      50%       { transform: translateX(22px) scaleY(1.07); }
+    }
+
+    .patient-card { box-shadow: 0 4px 18px -2px rgba(14,165,233,0.09), 0 2px 6px -1px rgba(0,0,0,0.04); }
+    .patient-card:hover { transform: translateY(-1px); box-shadow: 0 8px 24px -4px rgba(14,165,233,0.18); }
+    .patient-card { transition: all 0.2s ease; }
+
+    .bottom-nav { box-shadow: 0 -4px 20px -2px rgba(15,23,42,0.07); }
+  </style>
+</head>
+<body class="min-h-screen">
+
+  <!-- ===== HEADER ===== -->
+  <header class="wave-header relative text-white pt-4 pb-10 px-6">
+
+    <!-- Animated wave overlay -->
+    <div class="absolute inset-x-0 bottom-0 overflow-hidden pointer-events-none">
+      <svg class="wave-layer-1 absolute bottom-1 w-[180%] h-16 opacity-30" viewBox="0 0 1200 80" preserveAspectRatio="none" fill="white">
+        <path d="M0,40 C200,80 400,0 600,40 C800,80 1000,0 1200,40 L1200,80 L0,80 Z"/>
+      </svg>
+      <svg class="wave-layer-2 absolute bottom-0 w-[180%] h-10 opacity-50" viewBox="0 0 1200 60" preserveAspectRatio="none" fill="white">
+        <path d="M0,30 C150,60 350,0 600,30 C850,60 1050,0 1200,30 L1200,60 L0,60 Z"/>
+      </svg>
+    </div>
+
+    <!-- Top row: back + doctor badge -->
+    <div class="relative z-10 flex items-center justify-between mb-4">
+      <button onclick="window.location.href='index.html'"
+        class="w-10 h-10 rounded-full bg-white/20 hover:bg-white/30 backdrop-blur flex items-center justify-center transition-colors">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+          <path d="M15.75 19.5L8.25 12l7.5-7.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+
+      <!-- Doctor badge reads from localStorage -->
+      <div class="flex items-center gap-2 bg-white/20 backdrop-blur px-3 py-1.5 rounded-full border border-white/30">
+        <div class="w-7 h-7 rounded-full bg-white text-brand-600 flex items-center justify-center">
+          <svg class="w-4 h-4 fill-current text-[#0284c7]" viewBox="0 0 24 24">
+            <path d="M12 2a4 4 0 100 8 4 4 0 000-8zm0 10c-4.42 0-8 2.24-8 5v2h16v-2c0-2.76-3.58-5-8-5z"/>
+          </svg>
+        </div>
+        <div class="flex flex-col text-left">
+          <span class="text-[10px] uppercase font-semibold tracking-wider text-sky-100 leading-none">Doctor</span>
+          <span id="doctor-badge-name" class="text-sm font-bold text-white">dr.smith</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Title -->
+    <div class="relative z-10">
+      <h1 class="text-2xl font-extrabold tracking-tight text-white">Osteoarthritis Patients</h1>
+      <p class="text-xs text-sky-100 font-medium mt-1 flex items-center gap-1.5">
+        <span class="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+        Active Clinic • 8 Scheduled Cases Today
+      </p>
+    </div>
+  </header>
+  <!-- ===== END HEADER ===== -->
+
+  <!-- ===== SEARCH + FILTERS ===== -->
+  <div class="px-6 pt-4 pb-2 bg-slate-50 sticky top-0 z-10 shadow-sm">
+    <div class="relative flex items-center">
+      <span class="absolute left-3.5 text-slate-400">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </span>
+      <input id="search-input" type="text" placeholder="Search patient name, ID, or joint…"
+        class="w-full bg-white border border-slate-200 text-slate-800 text-sm rounded-xl pl-9 pr-4 py-2.5 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#0284c7] focus:border-transparent placeholder-slate-400 transition">
+    </div>
+
+    <div class="flex gap-2 overflow-x-auto no-scrollbar py-2.5">
+      <button class="filter-btn active-filter px-3.5 py-1 rounded-full text-xs font-semibold bg-[#0284c7] text-white shadow-sm whitespace-nowrap" data-filter="all">All Patients (8)</button>
+      <button class="filter-btn px-3.5 py-1 rounded-full text-xs font-medium bg-white text-slate-600 border border-slate-200 hover:border-sky-300 whitespace-nowrap" data-filter="severe">Grade III / IV Severe</button>
+      <button class="filter-btn px-3.5 py-1 rounded-full text-xs font-medium bg-white text-slate-600 border border-slate-200 hover:border-sky-300 whitespace-nowrap" data-filter="knee">Knee OA</button>
+      <button class="filter-btn px-3.5 py-1 rounded-full text-xs font-medium bg-white text-slate-600 border border-slate-200 hover:border-sky-300 whitespace-nowrap" data-filter="hip">Hip OA</button>
+    </div>
+  </div>
+  <!-- ===== END SEARCH ===== -->
+
+  <!-- ===== PATIENT LIST ===== -->
+  <main class="px-6 pt-3 pb-28 space-y-4" id="patient-list">
+
+    <!-- Patient 1: Eleanor Vance -->
+    <article class="patient-card bg-white rounded-2xl p-4 border border-slate-100 hover:border-sky-200 flex flex-col gap-2.5 cursor-pointer"
+      data-name="Eleanor Vance" data-filter-tags="knee severe"
+      onclick="goToAssessment('Eleanor Vance','#OA-8041','68 yrs • Female • Bilateral Knee','Grade III','grade3')">
+      <div class="flex items-start justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-11 h-11 rounded-xl bg-sky-100 text-[#0284c7] font-bold flex items-center justify-center text-sm ring-2 ring-sky-50 shrink-0">EV</div>
+          <div>
+            <div class="flex items-center gap-1.5 flex-wrap">
+              <h2 class="font-bold text-slate-900 text-sm">Eleanor Vance</h2>
+              <span class="text-[10px] font-medium bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded">#OA-8041</span>
+            </div>
+            <p class="text-[11px] text-slate-500 font-medium">68 yrs • Female • Bilateral Knee</p>
+          </div>
+        </div>
+        <span class="text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200/80 px-2 py-0.5 rounded-full whitespace-nowrap">Grade III</span>
+      </div>
+      <div class="grid grid-cols-2 gap-2 bg-slate-50 rounded-xl p-2.5 text-[11px]">
+        <div>
+          <span class="text-slate-400 block text-[10px] font-medium">Pain (VAS Scale)</span>
+          <span class="font-bold text-rose-600 flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-rose-500 shrink-0"></span> 7 / 10 (Severe)</span>
+        </div>
+        <div>
+          <span class="text-slate-400 block text-[10px] font-medium">Range of Motion (ROM)</span>
+          <span class="font-semibold text-slate-700">Flexion: 95° / Ext: -5°</span>
+        </div>
+      </div>
+      <div class="flex items-center justify-between pt-1 border-t border-slate-100 text-[11px]">
+        <div class="flex items-center gap-1 text-sky-700 font-semibold">
+          <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Today, 10:30 AM (In-Clinic)
+        </div>
+        <span class="text-[#0284c7] font-semibold flex items-center">View Chart <svg class="w-3.5 h-3.5 ml-0.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M8.25 4.5l7.5 7.5-7.5 7.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      </div>
+    </article>
+
+    <!-- Patient 2: Robert Chen -->
+    <article class="patient-card bg-white rounded-2xl p-4 border border-slate-100 hover:border-sky-200 flex flex-col gap-2.5 cursor-pointer"
+      data-name="Robert Chen" data-filter-tags="hip"
+      onclick="goToAssessment('Robert Chen','#OA-7922','54 yrs • Male • Right Hip OA','Grade II (Moderate)','grade2')">
+      <div class="flex items-start justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-11 h-11 rounded-xl bg-teal-100 text-teal-700 font-bold flex items-center justify-center text-sm ring-2 ring-teal-50 shrink-0">RC</div>
+          <div>
+            <div class="flex items-center gap-1.5 flex-wrap">
+              <h2 class="font-bold text-slate-900 text-sm">Robert Chen</h2>
+              <span class="text-[10px] font-medium bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded">#OA-7922</span>
+            </div>
+            <p class="text-[11px] text-slate-500 font-medium">54 yrs • Male • Right Hip OA</p>
+          </div>
+        </div>
+        <span class="text-[10px] font-bold bg-blue-50 text-sky-700 border border-sky-200/80 px-2 py-0.5 rounded-full whitespace-nowrap">Grade II (Moderate)</span>
+      </div>
+      <div class="grid grid-cols-2 gap-2 bg-slate-50 rounded-xl p-2.5 text-[11px]">
+        <div>
+          <span class="text-slate-400 block text-[10px] font-medium">Pain (VAS Scale)</span>
+          <span class="font-bold text-amber-600 flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-amber-500 shrink-0"></span> 4 / 10 (Moderate)</span>
+        </div>
+        <div>
+          <span class="text-slate-400 block text-[10px] font-medium">Therapy Plan</span>
+          <span class="font-semibold text-slate-700">HA Injection + Physio</span>
+        </div>
+      </div>
+      <div class="flex items-center justify-between pt-1 border-t border-slate-100 text-[11px]">
+        <div class="flex items-center gap-1 text-slate-600 font-medium">
+          <svg class="w-3.5 h-3.5 shrink-0 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Today, 11:45 AM (Follow-up)
+        </div>
+        <span class="text-[#0284c7] font-semibold flex items-center">View Chart <svg class="w-3.5 h-3.5 ml-0.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M8.25 4.5l7.5 7.5-7.5 7.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      </div>
+    </article>
+
+    <!-- Patient 3: Margaret Torres -->
+    <article class="patient-card bg-white rounded-2xl p-4 border border-slate-100 hover:border-sky-200 flex flex-col gap-2.5 cursor-pointer"
+      data-name="Margaret Torres" data-filter-tags="knee severe"
+      onclick="goToAssessment('Margaret Torres','#OA-6610','72 yrs • Female • Left Knee OA','Grade IV (End Stage)','grade4')">
+      <div class="flex items-start justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-11 h-11 rounded-xl bg-purple-100 text-purple-700 font-bold flex items-center justify-center text-sm ring-2 ring-purple-50 shrink-0">MT</div>
+          <div>
+            <div class="flex items-center gap-1.5 flex-wrap">
+              <h2 class="font-bold text-slate-900 text-sm">Margaret Torres</h2>
+              <span class="text-[10px] font-medium bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded">#OA-6610</span>
+            </div>
+            <p class="text-[11px] text-slate-500 font-medium">72 yrs • Female • Left Knee OA</p>
+          </div>
+        </div>
+        <span class="text-[10px] font-bold bg-red-50 text-red-700 border border-red-200/80 px-2 py-0.5 rounded-full whitespace-nowrap">Grade IV (End Stage)</span>
+      </div>
+      <div class="grid grid-cols-2 gap-2 bg-slate-50 rounded-xl p-2.5 text-[11px]">
+        <div>
+          <span class="text-slate-400 block text-[10px] font-medium">Pain (VAS Scale)</span>
+          <span class="font-bold text-red-600 flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-red-600 shrink-0"></span> 8.5 / 10 (Severe)</span>
+        </div>
+        <div>
+          <span class="text-slate-400 block text-[10px] font-medium">Surgical Recommendation</span>
+          <span class="font-semibold text-rose-600">Total Knee Arthroplasty</span>
+        </div>
+      </div>
+      <div class="flex items-center justify-between pt-1 border-t border-slate-100 text-[11px]">
+        <div class="flex items-center gap-1 text-slate-600 font-medium">
+          <svg class="w-3.5 h-3.5 shrink-0 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Today, 2:15 PM (Pre-Op Consult)
+        </div>
+        <span class="text-[#0284c7] font-semibold flex items-center">View Chart <svg class="w-3.5 h-3.5 ml-0.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M8.25 4.5l7.5 7.5-7.5 7.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      </div>
+    </article>
+
+    <!-- Patient 4: Arthur Pendelton -->
+    <article class="patient-card bg-white rounded-2xl p-4 border border-slate-100 hover:border-sky-200 flex flex-col gap-2.5 cursor-pointer"
+      data-name="Arthur Pendelton" data-filter-tags="knee"
+      onclick="goToAssessment('Arthur Pendelton','#OA-9140','61 yrs • Male • Bilateral Hands & Knees','Grade I (Mild)','grade1')">
+      <div class="flex items-start justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-11 h-11 rounded-xl bg-emerald-100 text-emerald-700 font-bold flex items-center justify-center text-sm ring-2 ring-emerald-50 shrink-0">AP</div>
+          <div>
+            <div class="flex items-center gap-1.5 flex-wrap">
+              <h2 class="font-bold text-slate-900 text-sm">Arthur Pendelton</h2>
+              <span class="text-[10px] font-medium bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded">#OA-9140</span>
+            </div>
+            <p class="text-[11px] text-slate-500 font-medium">61 yrs • Male • Bilateral Hands &amp; Knees</p>
+          </div>
+        </div>
+        <span class="text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/80 px-2 py-0.5 rounded-full whitespace-nowrap">Grade I (Mild)</span>
+      </div>
+      <div class="grid grid-cols-2 gap-2 bg-slate-50 rounded-xl p-2.5 text-[11px]">
+        <div>
+          <span class="text-slate-400 block text-[10px] font-medium">Pain (VAS Scale)</span>
+          <span class="font-bold text-emerald-600 flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-emerald-500 shrink-0"></span> 2 / 10 (Mild)</span>
+        </div>
+        <div>
+          <span class="text-slate-400 block text-[10px] font-medium">Primary Focus</span>
+          <span class="font-semibold text-slate-700">Weight &amp; Ergonomic mgmt</span>
+        </div>
+      </div>
+      <div class="flex items-center justify-between pt-1 border-t border-slate-100 text-[11px]">
+        <div class="flex items-center gap-1 text-slate-600 font-medium">
+          <svg class="w-3.5 h-3.5 shrink-0 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Today, 4:00 PM (Routine)
+        </div>
+        <span class="text-[#0284c7] font-semibold flex items-center">View Chart <svg class="w-3.5 h-3.5 ml-0.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M8.25 4.5l7.5 7.5-7.5 7.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      </div>
+    </article>
+
+  </main>
+  <!-- ===== END PATIENT LIST ===== -->
+
+  <!-- ===== BOTTOM NAV ===== -->
+  <nav class="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 px-8 py-3 bottom-nav flex justify-between items-center z-20">
+    <button class="flex flex-col items-center gap-1 text-[#0284c7]">
+      <div class="relative">
+        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+          <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5s-3 1.34-3 3 1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
+        </svg>
+        <span class="w-1.5 h-1.5 rounded-full bg-[#0284c7] absolute -top-0.5 -right-1"></span>
+      </div>
+      <span class="text-[10px] font-bold">Patients</span>
+    </button>
+
+    <div class="-mt-6">
+      <button aria-label="Add Patient" class="w-12 h-12 rounded-full bg-gradient-to-r from-[#0284c7] to-[#38bdf8] text-white flex items-center justify-center shadow-lg shadow-sky-500/40 hover:scale-105 active:scale-95 transition-transform">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+          <path d="M12 4.5v15m7.5-7.5h-15" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+    </div>
+
+    <button class="flex flex-col items-center gap-1 text-slate-400 hover:text-slate-600 transition" onclick="window.location.href='index.html'">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path d="M17.982 18.725A7.488 7.488 0 0012 15.75a7.488 7.488 0 00-5.982 2.975m11.963 0a9 9 0 10-11.963 0m11.963 0A8.966 8.966 0 0112 21a8.966 8.966 0 01-5.982-2.275M15 9.75a3 3 0 11-6 0 3 3 0 016 0z" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <span class="text-[10px] font-medium">Profile</span>
+    </button>
+  </nav>
+  <!-- ===== END BOTTOM NAV ===== -->
+
+  <script>
+    // ---- Load doctor name from localStorage ----
+    const storedName = localStorage.getItem('doctorUsername') || 'dr.smith';
+    document.getElementById('doctor-badge-name').textContent = storedName;
+
+    // ---- Risk profiles per patient grade ----
+    const riskProfiles = {
+      grade1: {
+        percent: 18, label: 'Low', color: '#22c55e',
+        note: 'Low OA risk. Maintain healthy weight and regular exercise. Routine monitoring recommended.',
+        joints: [
+          { name:'Knee',     level:'Low',      bg:'#DCFCE7', text:'#16A34A' },
+          { name:'Hip',      level:'Low',      bg:'#DCFCE7', text:'#16A34A' },
+          { name:'Shoulder', level:'Low',      bg:'#DCFCE7', text:'#16A34A' },
+          { name:'Wrist',    level:'Low',      bg:'#DCFCE7', text:'#16A34A' },
+          { name:'Fingers',  level:'Low',      bg:'#DCFCE7', text:'#16A34A' },
+          { name:'Ankle',    level:'Low',      bg:'#DCFCE7', text:'#16A34A' },
+        ]
+      },
+      grade2: {
+        percent: 42, label: 'Moderate', color: '#FBBF24',
+        note: 'Moderate OA risk. Consider lifestyle adjustments and close monitoring. Consult a specialist for a detailed plan.',
+        joints: [
+          { name:'Knee',     level:'Moderate', bg:'#FEF3C7', text:'#D97706' },
+          { name:'Hip',      level:'Moderate', bg:'#FEF3C7', text:'#D97706' },
+          { name:'Shoulder', level:'Low',      bg:'#DCFCE7', text:'#16A34A' },
+          { name:'Wrist',    level:'Low',      bg:'#DCFCE7', text:'#16A34A' },
+          { name:'Fingers',  level:'Low',      bg:'#DCFCE7', text:'#16A34A' },
+          { name:'Ankle',    level:'Low',      bg:'#DCFCE7', text:'#16A34A' },
+        ]
+      },
+      grade3: {
+        percent: 72, label: 'High', color: '#f97316',
+        note: 'High OA risk. Immediate specialist consultation advised. Pain management and physiotherapy plan required.',
+        joints: [
+          { name:'Knee',     level:'High',     bg:'#FFE4E6', text:'#E11D48' },
+          { name:'Hip',      level:'Moderate', bg:'#FEF3C7', text:'#D97706' },
+          { name:'Shoulder', level:'Moderate', bg:'#FEF3C7', text:'#D97706' },
+          { name:'Wrist',    level:'Moderate', bg:'#FEF3C7', text:'#D97706' },
+          { name:'Fingers',  level:'High',     bg:'#FFE4E6', text:'#E11D48' },
+          { name:'Ankle',    level:'Low',      bg:'#DCFCE7', text:'#16A34A' },
+        ]
+      },
+      grade4: {
+        percent: 88, label: 'Very High', color: '#ef4444',
+        note: 'Very high OA risk — end stage. Surgical intervention strongly recommended. Immediate pre-op consultation required.',
+        joints: [
+          { name:'Knee',     level:'Very High', bg:'#FEE2E2', text:'#B91C1C' },
+          { name:'Hip',      level:'High',      bg:'#FFE4E6', text:'#E11D48' },
+          { name:'Shoulder', level:'Moderate',  bg:'#FEF3C7', text:'#D97706' },
+          { name:'Wrist',    level:'High',      bg:'#FFE4E6', text:'#E11D48' },
+          { name:'Fingers',  level:'Very High', bg:'#FEE2E2', text:'#B91C1C' },
+          { name:'Ankle',    level:'Moderate',  bg:'#FEF3C7', text:'#D97706' },
+        ]
+      },
+    };
+
+    // ---- Navigate to assessment with patient data ----
+    function goToAssessment(name, id, info, grade, gradeKey) {
+      const profile = riskProfiles[gradeKey] || riskProfiles.grade2;
+      localStorage.setItem('patientName', name);
+      localStorage.setItem('patientId', id);
+      localStorage.setItem('patientInfo', info);
+      localStorage.setItem('patientGrade', grade);
+      localStorage.setItem('patientGradeKey', gradeKey);
+      localStorage.setItem('riskPercent', profile.percent);
+      localStorage.setItem('riskLabel', profile.label);
+      localStorage.setItem('riskColor', profile.color);
+      localStorage.setItem('riskNote', profile.note);
+      localStorage.setItem('riskJoints', JSON.stringify(profile.joints));
+      window.location.href = 'assessment.html';
+    }
+
+    // ---- Search ----
+    document.getElementById('search-input').addEventListener('input', function () {
+      const q = this.value.toLowerCase();
+      document.querySelectorAll('#patient-list article').forEach(card => {
+        const name = card.dataset.name.toLowerCase();
+        card.style.display = name.includes(q) ? '' : 'none';
+      });
+    });
+
+    // ---- Filter pills ----
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+      btn.addEventListener('click', function () {
+        document.querySelectorAll('.filter-btn').forEach(b => {
+          b.classList.remove('bg-[#0284c7]', 'text-white', 'shadow-sm');
+          b.classList.add('bg-white', 'text-slate-600', 'border', 'border-slate-200');
+        });
+        this.classList.add('bg-[#0284c7]', 'text-white', 'shadow-sm');
+        this.classList.remove('bg-white', 'text-slate-600', 'border', 'border-slate-200');
+
+        const filter = this.dataset.filter;
+        document.querySelectorAll('#patient-list article').forEach(card => {
+          if (filter === 'all') {
+            card.style.display = '';
+          } else {
+            card.style.display = card.dataset.filterTags.includes(filter) ? '' : 'none';
+          }
+        });
+      });
+    });
+  </script>
+</body>
+</html>
